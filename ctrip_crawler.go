@@ -64,6 +64,7 @@ func (c *CtripCrawler) initFlightTable() {
 	flightTable := tablewriter.NewColorWriter(os.Stdout)
 	flightTable.SetAlignment(tablewriter.ALIGN_LEFT)
 	flightTable.SetHeader(FlightTableHeader)
+	flightTable.SetCenterSeparator("|")
 	c.FlightTable = flightTable
 }
 
@@ -99,6 +100,12 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 	c.initFlightTable()
 	// 航班数据
 	flightRouteList := tableJson.Get("data").Get("routeList").Array()
+
+	msg := []string{
+		strings.Join([]string{"航空公司", "航班号", "起飞", "起飞时间", "到达", "到达时间", "机型", "餐食", "准点率", "经济舱", "商务舱", "头等舱"}, "|"),
+		strings.Join([]string{"---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---", "---"}, "|"),
+	}
+
 	for _, flightInfoHeader := range flightRouteList {
 		// 判断线路类型 Flight 飞行；FlightTrain 空地联运
 		tripType := flightInfoHeader.Get("routeType").String()
@@ -218,11 +225,15 @@ func (c *CtripCrawler) parseFlightTable(tableJson gjson.Result) {
 					airlineName, flightNumber, departureInfo, departureTime, arrivalInfo, arrivalTime,
 					aircraftInfo, mealInfo, punctualityRate, economyClassPrice, businessClassPrice, firstClassPrice,
 				}
+				msg = append(msg, strings.Join(row, "|"))
 				c.FlightTable.Append(row)
 			}
 		}
 	}
+	cli.SendMarkDownMessageBySlice("航班提醒", msg)
+
 	c.FlightTable.Render()
+
 }
 
 // 国内航班查询
